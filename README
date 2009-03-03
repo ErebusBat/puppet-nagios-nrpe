@@ -1,0 +1,11 @@
+This puppet module is currently capable of installing and configuring the nagios NRPE daemon and local plugins.
+
+We install the NRPE system without the rest nagios, so you should be able to use this module in concert with another puppet module focused on nagios itself. If you are looking for a puppet module to configure nagios, please be advised you aren't in the right place. The scope of this module is only to install and configure NRPE specifically without nagios.
+
+Currently this module is aimed at supporting Centos/RHEL using the EPEL <http://fedoraproject.org/wiki/EPEL> yum repository.
+
+To install copy modules/nagios-nrpe to your puppet modules directory
+
+	% cp -rp modules/nagios-nrpe /etc/puppet/modules
+
+$Id$
