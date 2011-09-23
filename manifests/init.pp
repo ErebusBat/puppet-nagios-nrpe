@@ -30,6 +30,14 @@ class nagios_nrpe (
 	# }
 	
 	$package_server_name = 'nagios-nrpe-server'
+	
+	# This is for the PID file
+	file { '/var/run/nagios3':
+		mode		=> 750,
+		owner		=> $nrpeuser,
+		group		=> $nrpegroup,
+		require	=> Package[$package_server_name],
+	}
 
 	file { "$nrpedir/nrpe.cfg":
 		mode	=> "644",
