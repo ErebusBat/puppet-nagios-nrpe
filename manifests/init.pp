@@ -75,4 +75,25 @@ class nagios_nrpe (
 		require		=> Package[$package_server_name],
 		subscribe => File["$nrpedir/nrpe.cfg"]
 	}
+
+	###################
+	# Ruby Probe Setup
+	###################
+	package { 'rubygems':
+		ensure		=> installed
+	}
+	package { 'nagios-probe':
+		provider	=> 'gem',
+		ensure		=> installed,
+		require		=> Package['rubygems']
+	}
+	file { "$pluginsdir/contrib/": 
+		ensure	=> directory,
+		recurse	=> true,
+		mode		=> 755,
+		owner		=> $nrpeuser,
+		group		=> $nrpegroup,
+		source	=> "puppet:///modules/${module_name}/plugins/contrib/",
+		require	=> Package['nagios-probe']
+	}
 }
