@@ -14,44 +14,47 @@
 # History:
 #		Initial version from Martha Greenberg marthag@mit.edu http://reductivelabs.com/trac/puppet/wiki/Recipes/Nagios
 
-class nagios-nrpe {
+class nagios-nrpe (
+	$allowed_hosts = ['localhost', $server ],	
+	$nrpeuser		= "nrpe",
+	$nrpegroup 	= "nrpe",	
+	$nrpedir		= "/etc/nagios",
+	$pluginsdir	= "/usr/lib/nagios/plugins"
+	) {
 
-	$allowed_hosts = ['localhost', 'nms.sv1.centralhost.com']
-	$nrpeservice = "nrpe"
-	$nrpepattern = "nrpe"
-	$nrpepackage = "nrpe"
-	$nrpedir		 = "/etc/nagios"
-	$nrpeuser	 = "nrpe"
-	$nrpegroup = "nrpe"
-	$pluginsdir	 = "/usr/lib/nagios/plugins"
 
-	file { "$pluginsdir/contrib/":
-		mode		=> "755",
-		source	=> "puppet://$server/nagios-nrpe/plugins/contrib/",
-		recurse => true
-	}
+	# file { "$pluginsdir/contrib/":
+	# 	mode		=> "755",
+	# 	source	=> "puppet://$server/modules/nagios-nrpe/plugins/contrib/",
+	# 	recurse => true
+	# }
 
 	file { "$nrpedir/nrpe.cfg":
 		mode	=> "644",
-		require => Package[$nrpepackage],
+		require => Package['nrpe'],
 		owner		=> $nrpeuser,
 		group		=> $nrpegroup,
+		require	=> Package['nrpe'],
 		content => template("nagios-nrpe/nrpe.cfg")
 	}
 
-	package { 
-		$nrpepackage: 
-			ensure => present;
-		"nagios-plugins-all": 
-			ensure => present;
-		"nagios-plugins-nrpe": 
-			ensure => present;
+	package { "nrpe": 
+		ensure 	=> present,
+	}
+	package { "nagios-plugins-nrpe": 
+		ensure	=> present,
+		require	=> Package['nrpe']
+	}
+	package { "nagios-plugins-all": 
+		ensure 	=> present,
+		require	=> Package['nagios-plugins-nrpe']				
 	}
 
-	service { "$nrpeservice":
+	service { nrpe:
 		ensure		=> running,
 		enable		=> true,
-		pattern		=> "$nrpepattern",
+		pattern		=> "nrpe",
+		require		=> Package['nrpe']
 		subscribe => File["$nrpedir/nrpe.cfg"]
 	}
 }
