@@ -31,6 +31,13 @@ class nagios_nrpe (
 	# }
 	
 	$package_server_name = 'nagios-nrpe-server'
+	$additional_plugins  =[
+		'nagios-plugins-basic',
+		'nagios-plugins-extra',
+		'nagios-plugins',
+		'nagios-plugins-standard',
+		'nagios-snmp-plugins'
+	]
 	
 	# This is for the PID file
 	file { '/var/run/nagios3':
@@ -54,6 +61,11 @@ class nagios_nrpe (
 	package { "nagios-nrpe-plugin": 
 		ensure	=> present,
 		require	=> Package[$package_server_name]
+	}
+	package { nrpe_plugins:
+		name		=> $additional_plugins,
+		ensure	=> present,
+		require => Package[$package_server_name]
 	}
 
 	service { $package_server_name:
