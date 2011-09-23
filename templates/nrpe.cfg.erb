@@ -66,7 +66,9 @@ connection_timeout=300
 # INCLUDE CONFIG DIRECTORY
 # This directive allows you to include definitions from config files (with a
 # .cfg extension) in one or more directories (with recursion).
-#include_dir=<somedirectory>
+<% if has_variable?("nrpe_conf_d") then %>
+include_dir=<%= nrpe_conf_d %>
+<% end %>
 #include_dir=<someotherdirectory>
 
 # COMMAND DEFINITIONS
@@ -103,4 +105,3 @@ command[check_tcp]=<%= pluginsdir %>/check_tcp $ARG1$
 command[check_time]=<%= pluginsdir %>/check_time $ARG1$
 command[check_time_skew]=<%= pluginsdir %>/check_time_skew $ARG1$
 command[check_users]=<%= pluginsdir %>/check_users $ARG1$
-command[check_apt]=<%= pluginsdir %>/check_apt

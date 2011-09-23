@@ -16,10 +16,11 @@
 
 class nagios_nrpe (
 	$allowed_hosts = ['localhost', $server ],	
-	$nrpeuser		= "nagios",
-	$nrpegroup 	= "nagios",	
-	$nrpedir		= "/etc/nagios",
-	$pluginsdir	= "/usr/lib/nagios/plugins"
+	$nrpeuser			= "nagios",
+	$nrpegroup 		= "nagios",	
+	$nrpedir			= "/etc/nagios",
+	$pluginsdir		= "/usr/lib/nagios/plugins",
+	$nrpe_conf_d	= "/etc/nagios/nrpe.d"
 	) {
 
 
