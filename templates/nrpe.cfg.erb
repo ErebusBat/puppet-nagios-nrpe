@@ -87,7 +87,7 @@ allowed_hosts=127.0.0.1
 #
 # Values: 0=do not allow arguments, 1=allow command arguments
 
-dont_blame_nrpe=0
+dont_blame_nrpe=1
 
 
 
@@ -178,6 +178,28 @@ connection_timeout=300
 # When the daemon receives a request to return the results of <command_name>
 # it will execute the command specified by the <command_line> argument.
 #
-command[check_swap]=<%= pluginsdir %>/check_swap -w "25%" -c "15%"
-command[check_disk]=<%= pluginsdir %>/check_disk -w 5 -c 2 -p /
+#command[check_swap]=<%= pluginsdir %>/check_swap -w "25%" -c "15%"
+#command[check_disk]=<%= pluginsdir %>/check_disk -w 5 -c 2 -p /
 #command[check_raid]=<%= pluginsdir %>/contrib/check_linux_raid.pl md1
+
+command[check_cluster]=<%= pluginsdir %>/check_cluster $ARG1$
+command[check_dir_age]=<%= pluginsdir %>/check_dir_age $ARG1$
+command[check_disk]=<%= pluginsdir %>/check_disk $ARG1$
+command[check_file_age]=<%= pluginsdir %>/check_file_age $ARG1$
+command[check_hpjd]=<%= pluginsdir %>/check_hpjd $ARG1$
+command[check_ide_smart]=<%= pluginsdir %>/check_ide_smart $ARG1$
+command[check_load]=<%= pluginsdir %>/check_load $ARG1$
+command[check_mailq]=<%= pluginsdir %>/check_mailq $ARG1$
+command[check_memory]=<%= pluginsdir %>/check_memory $ARG1$
+command[check_ntp]=<%= pluginsdir %>/check_ntp $ARG1$
+command[check_ntp_peer]=<%= pluginsdir %>/check_ntp_peer $ARG1$
+command[check_ntp_time]=<%= pluginsdir %>/check_ntp_time $ARG1$
+command[check_postgres]=<%= pluginsdir %>/check_postgres $ARG1$
+command[check_procs]=<%= pluginsdir %>/check_procs $ARG1$
+#command[check_raid]=<%= pluginsdir %>/check_raid $ARG1$
+command[check_snmp]=<%= pluginsdir %>/check_snmp $ARG1$
+command[check_swap]=<%= pluginsdir %>/check_swap $ARG1$
+command[check_tcp]=<%= pluginsdir %>/check_tcp $ARG1$
+command[check_time]=<%= pluginsdir %>/check_time $ARG1$
+command[check_time_skew]=<%= pluginsdir %>/check_time_skew $ARG1$
+command[check_users]=<%= pluginsdir %>/check_users $ARG1$
