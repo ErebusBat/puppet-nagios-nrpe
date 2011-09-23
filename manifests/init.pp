@@ -36,7 +36,7 @@ class nagios_nrpe (
 		owner		=> $nrpeuser,
 		group		=> $nrpegroup,
 		require	=> Package[$package_server_name],
-		content => template("$module_name/nrpe.cfg")
+		content => template("$module_name/nrpe.cfg.erb")
 	}
 
 	package { $package_server_name: 
