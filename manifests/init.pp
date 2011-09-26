@@ -96,4 +96,11 @@ class nagios_nrpe (
 		source	=> "puppet:///modules/${module_name}/plugins/contrib/",
 		require	=> Package['nagios-probe']
 	}
+	
+	########################
+	# Support for IPMI/ILOM
+	########################
+	package{ 'ipmitool': }
+	package{ 'freeipmi-common': }
+	package{ 'freeipmi-tools': }
 }
