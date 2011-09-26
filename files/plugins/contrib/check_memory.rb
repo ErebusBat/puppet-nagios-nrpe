@@ -50,7 +50,7 @@ class BaseProbe < Nagios::Probe
 end
 
 class MyProbe < BaseProbe	
-	attr_accessor :mem_free, :mem_used, :mem_total, :critical_range, :warning_range
+	attr_accessor :mem_free, :mem_used, :mem_total, :critical_range, :warning_range, :check_pct
 	
 	def initialize		
 		@critical_range = Range.new 0,0
@@ -58,6 +58,7 @@ class MyProbe < BaseProbe
 		@mem_free		= [0,0]
 		@mem_used		= [0,0]
 		@mem_total 	= 0
+		@check_pct	= true
 	end
 	
 	def decode_argvs argv=nil
@@ -65,12 +66,15 @@ class MyProbe < BaseProbe
 		while argv.count > 0
 			current = argv.shift
 			case current
+			when /^\-{1,2}mem/,
+			     /^\-{1,2}check-mem/ 
+				@check_pct = false
 			when '-c'
 				@critical_range = range_from_nagios_threshold argv.shift
 			when '-w'
 				@warning_range = range_from_nagios_threshold argv.shift
 			else
-				raise "Unknown parameter: $current"
+				raise "Unknown parameter: #{current}"
 			end
 		end
 	end
@@ -91,25 +95,51 @@ Total:       25101        448      24653
 		match = mem.match /Mem:\s+(\d+)\s+(\d+)\s+(\d+)/
 		raise "couldn't match!" unless match && match.length==4
  		debug "MATCH! t=#{match[1]} u=#{match[2]} f=#{match[3]}"
-		@mem_free[0] = match[1].to_i
-		@mem_used[0] = match[2].to_i
-		@mem_total   = match[3].to_i 
+		@mem_total   = match[1].to_i
+		@mem_used[0] = match[2].to_i 
+		@mem_free[0] = match[3].to_i
 		
 		@mem_free[1] = to_pct @mem_free[0], @mem_total
 		@mem_used[1] = to_pct @mem_used[0], @mem_total
-		debug "Total: 	#{@mem_total} MB"
-		debug " Free: 	#{@mem_free[0]} MB/#{@mem_free[1]}%"
-		debug " Used: 	#{@mem_used[0]} MB/#{@mem_used[1]}%"
+		if is_debug?:
+			mode = @check_pct ? "Percent Free" : "Physical MB Free"
+		 	msg = %Q{
+Debugging info
+===============================================
+      Mode:  #{mode}
+     Total:  #{@mem_total} MB
+      Free:  #{@mem_free[0]} MB/#{@mem_free[1]}%
+      Used:  #{@mem_used[0]} MB/#{@mem_used[1]}%
+Crit Range:  #{@critical_range}
+Warn Range:  #{@warning_range}
+  Is Crit?:  #{check_crit}
+  Is Warn?:  #{check_warn}
+  Match:  #{match[0]}
+
+Cmd Output:  
+#{mem}
+}
+			puts msg
+		end
+	end
+	
+	def check_number
+		# Returns either the PCT or physical free, depending on settings
+		if @check_pct:
+			100-@mem_free[1].round()
+		else
+			@mem_total-@mem_free[0]
+		end
 	end
 	
   def check_crit
     return true unless @mem_total # fail if we didn't match
-		@critical_range === @mem_free
+		@critical_range === check_number
   end
 
   def check_warn
     return true unless @mem_total # fail if we didn't match
-		@warning_range === @mem_free
+		@warning_range === check_number
   end
 
   def crit_message
