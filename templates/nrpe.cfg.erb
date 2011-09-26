@@ -79,11 +79,7 @@ include_dir=<%= nrpe_conf_d %>
 #
 # When the daemon receives a request to return the results of <command_name>
 # it will execute the command specified by the <command_line> argument.
-#
-#command[check_swap]=<%= pluginsdir %>/check_swap -w "25%" -c "15%"
-#command[check_disk]=<%= pluginsdir %>/check_disk -w 5 -c 2 -p /
-#command[check_raid]=<%= pluginsdir %>/contrib/check_linux_raid.pl md1
-
+# OpsView passes all the arguments in ARG1 which is cleaner and easier to manage from the web.
 command[check_cluster]=<%= pluginsdir %>/check_cluster $ARG1$
 command[check_dir_age]=<%= pluginsdir %>/check_dir_age $ARG1$
 command[check_disk]=<%= pluginsdir %>/check_disk $ARG1$
@@ -106,4 +102,4 @@ command[check_time_skew]=<%= pluginsdir %>/check_time_skew $ARG1$
 command[check_users]=<%= pluginsdir %>/check_users $ARG1$
 
 # Contrib plugins (also check in <%= nrpe_conf_d %>)
-command[check_memory]=<%= pluginsdir %>/contrib/check_memory.rb -w $ARG1$ -c $ARG2$
+command[check_memory]=<%= pluginsdir %>/contrib/check_memory.rb $ARG1$

@@ -70,9 +70,11 @@ class MyProbe < BaseProbe
 			     /^\-{1,2}check-mem/ 
 				@check_pct = false
 			when '-c'
-				@critical_range = range_from_nagios_threshold argv.shift
+				#@critical_range = range_from_nagios_threshold argv.shift
+				@critical_range = Range.new argv.shift.to_i, MAX_NUM
 			when '-w'
-				@warning_range = range_from_nagios_threshold argv.shift
+				#@warning_range = range_from_nagios_threshold argv.shift
+				@warning_range = Range.new argv.shift.to_i, MAX_NUM
 			else
 				raise "Unknown parameter: #{current}"
 			end
@@ -84,14 +86,17 @@ class MyProbe < BaseProbe
 		# @mem_free		= [0,0]
 		# @mem_used		= [0,0]
 		# @mem_total 	= 0
-		mem = %x{free -tm} unless is_debug?
-		mem = %Q{
+		if is_debug? and false:
+			mem = %Q{
              total       used       free     shared    buffers     cached
 Mem:          8001        448       7553          0         51        143
 -/+ buffers/cache:        253       7748
 Swap:        17099          0      17099
 Total:       25101        448      24653
-} if is_debug?
+} 
+		else
+			mem = %x{free -tm} 			
+		end
 		match = mem.match /Mem:\s+(\d+)\s+(\d+)\s+(\d+)/
 		raise "couldn't match!" unless match && match.length==4
  		debug "MATCH! t=#{match[1]} u=#{match[2]} f=#{match[3]}"
@@ -110,6 +115,7 @@ Debugging info
      Total:  #{@mem_total} MB
       Free:  #{@mem_free[0]} MB/#{@mem_free[1]}%
       Used:  #{@mem_used[0]} MB/#{@mem_used[1]}%
+   Check #:  #{check_number}
 Crit Range:  #{@critical_range}
 Warn Range:  #{@warning_range}
   Is Crit?:  #{check_crit}
@@ -128,8 +134,14 @@ Cmd Output:
 		if @check_pct:
 			100-@mem_free[1].round()
 		else
-			@mem_total-@mem_free[0]
+			@mem_used[0]
 		end
+	end
+	
+	def used_free_msg
+		return nil unless @mem_total
+		#"USED: #{@mem_used[0]}/#{@mem_total} MB, #{@mem_used[1]}%   FREE: #{@mem_free[0]}/#{@mem_total} MB, #{@mem_free[1]}%"
+		"USED(MB): #{@mem_used[0]}/#{@mem_total}, #{@mem_used[1]}%   FREE(MB): #{@mem_free[0]}/#{@mem_total}, #{@mem_free[1]}%"
 	end
 	
   def check_crit
@@ -144,15 +156,15 @@ Cmd Output:
 
   def crit_message
 		return "Could not parse result of free" unless @mem_free
-		"#{@mem_used[0]}MB/#{@mem_total[0]}MB (#{@mem_free[0]}MB, #{@mem_free[1]}% free)"
+		used_free_msg
   end
 
   def warn_message
-		crit_message
+		used_free_msg
   end
 
   def ok_message
-    "Used #{@mem_used[0]} MB/#{@mem_used[1]}% out of #{@mem_total} MB"
+		used_free_msg
   end
 end
 
