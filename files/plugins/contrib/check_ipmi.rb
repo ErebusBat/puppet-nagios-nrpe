@@ -80,7 +80,7 @@ class IpmiProbe
         when '--cache'
           args.probe_cache = arg
         when '--sensor'
-          args.sensor = arg
+          args.sensor = Regexp.escape arg
         when '--ok-match'
           args.ok_regex = Regexp.new arg, Regexp::IGNORECASE
           args.user_specified_checks = true
