@@ -58,7 +58,7 @@ fi
 # Check for the worst conditions first, filtering down
 #if [ -n `egrep "$CRITICAL_MATCH" $SENSOR_READING` ]; then
 __c="Check CRITICAL: $CRITICAL_MATCH"
-grep_and_set "$SENSOR_READING" "$CRITICAL_MATCH" $NRPE_CRITICAL "${NRPE_PREFIX}CRITICAL: $SENSOR: $SENSOR_READING"
+grep_and_set "$SENSOR_READING" "$CRITICAL_MATCH" $NRPE_CRITICAL "${NRPE_PREFIX}CRITICAL: $SENSOR_READING"
 if [ $? -eq $MATCHED ]; then
 	echo $RETURN_MESSAGE
 	exit $UNMATCHED_RETURN_VALUE
@@ -66,7 +66,7 @@ fi
 
 # Warning
 __c="Check WARN: $WARN_MATCH"
-grep_and_set "$SENSOR_READING" "$WARN_MATCH" $NRPE_WARN "${NRPE_PREFIX}WARNING: $SENSOR: $SENSOR_READING"
+grep_and_set "$SENSOR_READING" "$WARN_MATCH" $NRPE_WARN "${NRPE_PREFIX}WARNING: $SENSOR_READING"
 if [ $? -eq $MATCHED ]; then
 	echo $RETURN_MESSAGE
 	exit $UNMATCHED_RETURN_VALUE
@@ -77,11 +77,11 @@ fi
 # if OK_MATCH is not null then it must match
 if [ -z $OK_MATCH ]; then
 	__c="OK Match is Null and not WARN or FAIL so assume OK"
-	echo "${NRPE_PREFIX}OK: $SENSOR: $SENSOR_READING"
+	echo "${NRPE_PREFIX}OK: $SENSOR_READING"
 	exit $NRPE_OK
 else	
 	__c="Check OK: $OK_MATCH"
-	grep_and_set "$SENSOR_READING" "$OK_MATCH" $NRPE_OK "${NRPE_PREFIX}OK: $SENSOR: $SENSOR_READING"
+	grep_and_set "$SENSOR_READING" "$OK_MATCH" $NRPE_OK "${NRPE_PREFIX}OK: $SENSOR_READING"
 	if [ $? -eq $MATCHED ]; then
 		echo $RETURN_MESSAGE
 		exit $UNMATCHED_RETURN_VALUE
