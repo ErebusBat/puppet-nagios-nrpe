@@ -51,12 +51,14 @@ class IpmiProbe
 	def initialize
     @args               = OpenStruct.new
     args                = @args
-    args.probe_cache    = "/var/log/ipmi/sensor-reading-cache.#{`hostname`}"
+    args.hostname       = %x{hostname}.chomp
+    args.probe_cache    = "/var/log/ipmi/sensor-reading-cache.#{args.hostname}"
     $NAGIOS_EXIT        = Nagios::UNKNOWN
     args.ok_regex       = ''
     args.warn_regex     = /warn/i
     args.critical_regex = / Asserted/i
-    args.prefix         = 'IPMI'
+    args.prefix         = 'IPMI '
+    args.cache_age      = 60
 
     # Parse arguments
     opts = GetoptLong.new(
@@ -87,7 +89,8 @@ class IpmiProbe
     end
 
     raise "Must specify a sensor name: --sensor io.hdd0.fail" if args.sensor.to_s.empty?
-    #raise "Specified probe cache file (--cache) does not exist or can not be read: #{args.probe_cache}" unless File.readable?(args.probe_cache)
+    raise "Specified probe cache file (--cache) does not exist or can not be read: \"#{args.probe_cache}\"" unless File.readable?(args.probe_cache)
+    args.cache_age = args.cache_age.to_i
   end
 
   def run
@@ -97,8 +100,10 @@ class IpmiProbe
     o.sensor_reading.chomp!
 
     # TODO: Check file age
-    o.is_stale = true
-    o.prefix = "#{o.prefix} STALE?>" if o.is_stale
+    cache_mtime = File.mtime(o.probe_cache)
+    file_age = Time.now - cache_mtime
+    o.is_stale = file_age >= o.cache_age
+    o.prefix = "#{o.prefix} STALE>" if o.is_stale
 
     if is_debug?:
       puts <<-EOF
@@ -108,6 +113,10 @@ class IpmiProbe
                   WARN: #{o.warn_regex}
               CRITICAL: #{o.critical_regex}
         Sensor Reading: ==>#{o.sensor_reading}<==
+         Max Cache Age: #{o.cache_age}
+      Actual Cache Age: #{file_age}
+                   Now: #{Time.now}
+           Cache mtime: #{cache_mtime}
         Results Stale?: #{o.is_stale}
       EOF
     end
