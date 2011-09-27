@@ -70,7 +70,7 @@ class IpmiProbe
         [ '--critical-match',     '-C', GetoptLong::OPTIONAL_ARGUMENT ],
         [ '--fail-on-asserted',         GetoptLong::OPTIONAL_ARGUMENT ],
         [ '--ok-on-asserted',           GetoptLong::OPTIONAL_ARGUMENT ],
-        [ '--result-must-be-ok',        GetoptLong::OPTIONAL_ARGUMENT ]
+        [ '--must-be-ok',               GetoptLong::OPTIONAL_ARGUMENT ]
     )
     opts.each do |opt, arg|
       case opt
@@ -94,7 +94,7 @@ class IpmiProbe
           args.fail_on_assert = true
         when '--ok-on-asserted'
           args.fail_on_assert = false
-        when '--result-must-be-ok'
+        when '--must-be-ok'
           args.result_must_be_ok = true
       end
     end
@@ -144,7 +144,7 @@ Logic Options:
                             This is good for sensors like HDD failure
        --ok-on-asserted     Will be OK on / Asserted/ and fail on /deasserted/
                             This is good for state based sensors like PWR connections
-       --result-must-be-ok  Operate in a boolean manner. Ether OK match passes
+       --must-be-ok         Operate in a boolean manner. Ether OK match passes
                             it is a critical failure.  This defaults to
                             --ok-match /\[OK\]/ but can be overridden.
 
