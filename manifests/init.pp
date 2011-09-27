@@ -73,7 +73,7 @@ class nagios_nrpe (
 		enable		=> true,
 		pattern		=> "/usr/sbin/nrpe",
 		require		=> Package[$package_server_name],
-		subscribe => File["$nrpedir/nrpe.cfg"]
+		subscribe => [ File["$nrpedir/nrpe.cfg"], File["$nrpe_conf_d/sunfire_x4100.cfg"] ]
 	}
 
 	###################
@@ -117,5 +117,12 @@ class nagios_nrpe (
 		user		=> root,
 		minute	=> '*/1',		# Run Every Minute,
 		require => File['/usrbin/ipmi-update-reading-cache.sh']
+	}
+	
+	file { "$nrpe_conf_d/sunfire_x4100.cfg": 
+		mode		=> 644,
+		owner		=> $nrpeuser,
+		group		=> $nrpegroup,
+		content	=> template("${module_name}/sunfire_x4100.cfg.erb")
 	}
 }

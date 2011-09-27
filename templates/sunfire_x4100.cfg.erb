@@ -1,0 +1,32 @@
+# NRPE SunFire IPMI Check Commands
+# These are intended to be ran on the actual SunFire and not against the Service Processor
+# Because of some of the formatting of the commands NRPE will not pass them nicely :(
+	
+<%
+ ipmi_script = pluginsdir + "/contrib/check_ipmi.rb"
+%>
+
+# command[check_sunfire_]=<%= ipmi_script %> -S  --must-be-ok
+# command[check_sunfire_]=<%= ipmi_script %> -S  --fail-on-asserted
+# command[check_sunfire_]=<%= ipmi_script %> -S  --ok-on-asserted
+
+
+command[check_sunfire_sys_intsw]=<%= ipmi_script %> -S sys.intsw --must-be-ok
+command[check_sunfire_mb_batt]=<%= ipmi_script %> -S mb.v_bat --must-be-ok
+command[check_sunfire_mb_3v3stby]=<%= ipmi_script %> -S mb.v_+3v3stby --must-be-ok
+command[check_sunfire_mb_3v3]=<%= ipmi_script %> -S mb.v_+3v3 --must-be-ok
+command[check_sunfire_mb_5v]=<%= ipmi_script %> -S mb.v_+5v --must-be-ok
+command[check_sunfire_mb_12vPositive]=<%= ipmi_script %> -S mb.v_+12v --must-be-ok
+command[check_sunfire_mb_12vNegative]=<%= ipmi_script %> -S mb.v_-12v --must-be-ok
+command[check_sunfire_mb_temp]=<%= ipmi_script %> -S mb.t_amb --must-be-ok
+command[check_sunfire_fp_temp]=<%= ipmi_script %> -S fp.t_amb --must-be-ok 
+command[check_sunfire_pdb_temp]=<%= ipmi_script %> -S pdb.t_amb --must-be-ok
+command[check_sunfire_io_temp]=<%= ipmi_script %> -S io.t_amb --must-be-ok
+command[check_sunfire_fp_prsnt]=<%= ipmi_script %> -S fp.prsnt --must-be-ok --ok-match "Device Present"
+command[check_sunfire_fp_usb]=<%= ipmi_script %> -S fp.usbfail --fail-on-asserted
+command[check_sunfire_fp_locate]=<%= ipmi_script %> -S fp.locate.btn --fail-on-asserted
+command[check_sunfire_ps_present]=<%= ipmi_script %> -S $ARG1$.prsnt --must-be-ok --ok-match "Device Present"
+command[check_sunfire_ps_vinok]=<%= ipmi_script %> -S $ARG1$.vinok --ok-on-asserted
+command[check_sunfire_ps_pwrok]=<%= ipmi_script %> -S $ARG1$.pwrok --ok-on-asserted
+
+command[check_sunfire_hdd_health]=<%= ipmi_script %> -S io.$ARG1$.fail --fail-on-asserted
