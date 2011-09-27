@@ -3,111 +3,137 @@
 # This uses the output of the /usrbin/ipmi-update-reading-cache.sh script
 # this is so that NRPE reading will be super fast.
 
-require 'rubygems'
-require 'nagios-probe'
+require 'ostruct'
+require 'getoptlong'
 
-DEBUG=$DEBUG
-MAX_NUM=9999999
-class BaseProbe < Nagios::Probe	
-	alias :super_run :run
-	def run
-		decode_argvs
-		gather
-		super_run
-	end
-	
-	def decode_argvs argv=nil
-	end
-	
-	def range_from_nagios_threshold thres
-		case thres
-		when /([0-9]+)/
-			Range.new 0, $1.to_i
-		when /([0-9]+):/
-			Range.new $1.to_i, MAX_NUM
-		when /~:([0-9]+)/
-			Range.new $1.to_i.next, MAX_NUM
-		when /@([0-9]+):([0-9]+)/
-			Range.new $1.to_i, $2.to_i
-		else
-			raise "I don't know how to parse: $thres"
-		end
-	end
-	
-	def is_debug?
-		DEBUG
-	end
-	def debug msg
-		puts msg if is_debug?
-	end
-	
-	def round num,prec=0
-		return num.to_f.round if prec==0
-		prec_num = (10**prec).to_f
-		(num * prec_num).round() / prec_num
-	end
-	def to_pct num, total
-		round num/total.to_f*100, 2
-	end
-end
+module Nagios
+  OK = 0
+  WARNING = 1
+  CRITICAL = 2
+  UNKNOWN = 3
 
-class MyProbe < BaseProbe	
-	attr_accessor :ok_string, :sensor, :reading
-	
-	def initialize	
-		@ok_string = "[OK]"
-	end
-	
-	def decode_argvs argv=nil
-		argv = ARGV unless argv
-		while argv.count > 0
-			current = argv.shift
-			case current
-			when /^-s /,
-			     /^--sensor/ 
-				@sensor = argv.shift
-			else
-				raise "Unknown parameter: #{current}"
-			end
-		end
-	end
-	
-	
-	def gather		
-		@reading = %x{grep #{@sensor}: /root/.freeipmi/sensor-reading-cache}		
-	end
-	
-	def check_crit
-    return true unless @reading
-		@reading.match(@ok_string) == false
+  def self.do_exit prefix, title, msg, code
+    $NAGIOS_EXIT = code
+    puts "#{prefix}#{title}: #{msg}"
+    exit $NAGIOS_EXIT
   end
 
-  def check_warn
-		@reading.match(@ok_string) == false
+  def self.fail msg, prefix=''
+    Nagios::do_exit prefix, "UNKNOWN", msg, UNKNOWN
   end
 
-  def crit_message
-		@reading
+  def exit_ok msg, prefix=''
+    Nagios::do_exit prefix, "OK", msg, OK
   end
 
-  def warn_message
-		@reading
+  def exit_warn msg, prefix=''
+    Nagios::do_exit prefix, "WARNING", msg, WARNING
   end
 
-  def ok_message
-		@reading
+  def exit_critical msg, prefix=''
+    Nagios::do_exit prefix, "CRITICAL", msg, CRITICAL
+  end
+
+  def is_debug?
+    $DEBUG
+  end
+
+  def dputs msg
+    return unless is_debug?
+    puts msg
   end
 end
 
+class IpmiProbe
+  include Nagios
+	attr_accessor :args
+	
+	def initialize
+    @args               = OpenStruct.new
+    args                = @args
+    args.probe_cache    = "/var/log/ipmi/sensor-reading-cache.#{`hostname`}"
+    $NAGIOS_EXIT        = Nagios::UNKNOWN
+    args.ok_regex       = ''
+    args.warn_regex     = /warn/i
+    args.critical_regex = / Asserted/i
+    args.prefix         = 'IPMI'
+
+    # Parse arguments
+    opts = GetoptLong.new(
+        [ '--help',               '-h', GetoptLong::NO_ARGUMENT ],
+        [ '--cache',                    GetoptLong::OPTIONAL_ARGUMENT],
+        [ '--sensor',             '-S', GetoptLong::REQUIRED_ARGUMENT ],
+        [ '--ok-match',           '-O', GetoptLong::OPTIONAL_ARGUMENT ],
+        [ '--warn-match',         '-W', GetoptLong::OPTIONAL_ARGUMENT ],
+        [ '--critical-match',     '-C', GetoptLong::OPTIONAL_ARGUMENT ],
+        [ '--asserted-positive',        GetoptLong::OPTIONAL_ARGUMENT ],
+        [ '--asserted-negative',        GetoptLong::OPTIONAL_ARGUMENT ]
+    )
+    opts.each do |opt, arg|
+      case opt
+        when '--help'
+          raise "NOHELP"
+        when '--cache'
+          args.probe_cache = arg
+        when '--sensor'
+          args.sensor = arg
+        when '--ok-match'
+          args.ok_regex = Regexp.new arg, Regexp::IGNORECASE
+        when '--warn-match'
+          args.warn_regex = Regexp.new arg, Regexp::IGNORECASE
+        when '--critical-match'
+          args.critical_regex = Regexp.new arg, Regexp::IGNORECASE
+      end
+    end
+
+    raise "Must specify a sensor name: --sensor io.hdd0.fail" if args.sensor.to_s.empty?
+    #raise "Specified probe cache file (--cache) does not exist or can not be read: #{args.probe_cache}" unless File.readable?(args.probe_cache)
+  end
+
+  def run
+    o = @args
+    o.sensor_reading = %x{grep -P "#{o.sensor}" #{o.probe_cache}}
+    fail "No reading for sensor:#{o.sensor}" if o.sensor_reading.to_s.empty?
+    o.sensor_reading.chomp!
+
+    # TODO: Check file age
+    o.is_stale = true
+    o.prefix = "#{o.prefix} STALE?>" if o.is_stale
+
+    if is_debug?:
+      puts <<-EOF
+                 Cache: #{o.probe_cache}
+                Sensor: #{o.sensor}
+                    OK: #{o.ok_regex}
+                  WARN: #{o.warn_regex}
+              CRITICAL: #{o.critical_regex}
+        Sensor Reading: ==>#{o.sensor_reading}<==
+        Results Stale?: #{o.is_stale}
+      EOF
+    end
+
+    # Logic is: match worst to best scenarios.
+    exit_critical o.sensor_reading, o.prefix if o.critical_regex.match(o.sensor_reading)
+    exit_warn o.sensor_reading, o.prefix     if o.warn_regex.match(o.sensor_reading)
+    # If OK is specified then try it, otherwise assume OK if got here
+    exit_ok o.sensor_reading, o.prefix       if o.ok_regex.to_s.empty? or o.ok_regex.match(o.sensor_reading)
+  end
+end
+
+
+##############
+# Entry Point
+##############
 if __FILE__ == $0:
 	begin
-	  probe = MyProbe.new
+	  probe = IpmiProbe.new
 	  probe.run
-	rescue Exception => e
-	  puts "Unknown: " + e
-	  exit Nagios::UNKNOWN
-	end
 
-	puts probe.message
-	exit probe.retval
+    # If here then some unknown voodoo is going on
+    Nagios::fail "Wrong Opts? #{probe.args.sensor_reading}", probe.args.prefix
+  rescue SystemExit => e
+    exit $NAGIOS_EXIT
+  rescue Exception => e
+    Nagios::fail e
+	end
 end

@@ -111,26 +111,11 @@ class nagios_nrpe (
 		group		=> 'root',
 		require	=> File['/usrbin']		
 	}
-
-	file{ '/usrbin/ipmi-read-sensor.sh':
-		source	=> "puppet:///modules/${module_name}/usrbin/ipmi-read-sensor.sh",
-		mode		=> 755,
-		owner		=> 'root',
-		group		=> 'root',
-		require	=> File['/usrbin']		
-	}
-
-	file{ "$pluginsdir/contrib/check_ipmi_sensor.sh":
-		source	=> "puppet:///modules/${module_name}/usrbin/ipmi-read-sensor.sh",
-		mode		=> 755,
-		owner		=> 'root',
-		group		=> 'root',
-		require	=> File['/usrbin']		
-	}
 	
 	cron { 'ipmi-update-reading-cache':
 		command	=> '/usrbin/ipmi-update-reading-cache.sh',
 		user		=> root,
-		minute	=> '*/1',		# Run Every Minute		
+		minute	=> '*/1',		# Run Every Minute,
+		require => File['/usrbin/ipmi-update-reading-cache.sh']
 	}
 }
