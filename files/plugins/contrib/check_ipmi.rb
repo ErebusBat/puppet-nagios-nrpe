@@ -54,11 +54,10 @@ class IpmiProbe
     args.hostname       = %x{hostname}.chomp
     args.probe_cache    = "/var/log/ipmi/sensor-reading-cache.#{args.hostname}"
     $NAGIOS_EXIT        = Nagios::UNKNOWN
-    args.ok_regex       = ''
-    args.warn_regex     = /warn/i
-    args.critical_regex = / Asserted/i
     args.prefix         = 'IPMI '
     args.cache_age      = 60
+    args.fail_on_assert = false
+    args.user_specified_checks = false
 
     # Parse arguments
     opts = GetoptLong.new(
@@ -68,8 +67,8 @@ class IpmiProbe
         [ '--ok-match',           '-O', GetoptLong::OPTIONAL_ARGUMENT ],
         [ '--warn-match',         '-W', GetoptLong::OPTIONAL_ARGUMENT ],
         [ '--critical-match',     '-C', GetoptLong::OPTIONAL_ARGUMENT ],
-        [ '--asserted-positive',        GetoptLong::OPTIONAL_ARGUMENT ],
-        [ '--asserted-negative',        GetoptLong::OPTIONAL_ARGUMENT ]
+        [ '--fail-on-asserted',          GetoptLong::OPTIONAL_ARGUMENT ],
+        [ '--ok-on-asserted',            GetoptLong::OPTIONAL_ARGUMENT ]
     )
     opts.each do |opt, arg|
       case opt
@@ -81,10 +80,29 @@ class IpmiProbe
           args.sensor = arg
         when '--ok-match'
           args.ok_regex = Regexp.new arg, Regexp::IGNORECASE
+          args.user_specified_checks = true
         when '--warn-match'
           args.warn_regex = Regexp.new arg, Regexp::IGNORECASE
+          args.user_specified_checks = true
         when '--critical-match'
           args.critical_regex = Regexp.new arg, Regexp::IGNORECASE
+          args.user_specified_checks = true
+        when '--fail-on-asserted'
+          args.fail_on_assert = true
+        when '--ok-on-asserted'
+          args.fail_on_assert = false
+      end
+    end
+
+    unless args.user_specified_checks:
+      if args.fail_on_assert:
+        args.ok_regex       = /deasserted/
+        args.warn_regex     = /warn/i
+        args.critical_regex = / Asserted/i
+      else
+        args.ok_regex       = / Asserted/i
+        args.warn_regex     = /warn/i
+        args.critical_regex = /deasserted/
       end
     end
 
@@ -107,6 +125,7 @@ class IpmiProbe
 
     if is_debug?:
       puts <<-EOF
+ User Specified Checks: #{o.user_specified_checks}
                  Cache: #{o.probe_cache}
                 Sensor: #{o.sensor}
                     OK: #{o.ok_regex}
