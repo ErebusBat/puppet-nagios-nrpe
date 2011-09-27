@@ -68,13 +68,15 @@ class IpmiProbe
         [ '--ok-match',           '-O', GetoptLong::OPTIONAL_ARGUMENT ],
         [ '--warn-match',         '-W', GetoptLong::OPTIONAL_ARGUMENT ],
         [ '--critical-match',     '-C', GetoptLong::OPTIONAL_ARGUMENT ],
-        [ '--fail-on-asserted',          GetoptLong::OPTIONAL_ARGUMENT ],
-        [ '--ok-on-asserted',            GetoptLong::OPTIONAL_ARGUMENT ]
+        [ '--fail-on-asserted',         GetoptLong::OPTIONAL_ARGUMENT ],
+        [ '--ok-on-asserted',           GetoptLong::OPTIONAL_ARGUMENT ],
+        [ '--result-must-be-ok',        GetoptLong::OPTIONAL_ARGUMENT ]
     )
     opts.each do |opt, arg|
       case opt
         when '--help'
-          raise "NOHELP"
+          show_help
+          exit Nagios::UNKNOWN
         when '--cache'
           args.probe_cache = arg
         when '--sensor'
@@ -92,24 +94,64 @@ class IpmiProbe
           args.fail_on_assert = true
         when '--ok-on-asserted'
           args.fail_on_assert = false
+        when '--result-must-be-ok'
+          args.result_must_be_ok = true
       end
     end
 
+    # Specify default regexen
     unless args.user_specified_checks:
       if args.fail_on_assert:
-        args.ok_regex       = /deasserted/
+        args.ok_regex       = /deasserted/i
         args.warn_regex     = /warn/i
         args.critical_regex = / Asserted/i
-      else
+      elsif args.fail_on_assert == false
         args.ok_regex       = / Asserted/i
         args.warn_regex     = /warn/i
-        args.critical_regex = /deasserted/
+        args.critical_regex = /deasserted/i
+      end
+
+      if args.result_must_be_ok:
+        args.ok_regex       = /\[OK\]/
       end
     end
 
     raise "Must specify a sensor name: --sensor io.hdd0.fail" if args.sensor.to_s.empty?
     raise "Specified probe cache file (--cache) does not exist or can not be read: \"#{args.probe_cache}\"" unless File.readable?(args.probe_cache)
     args.cache_age = args.cache_age.to_i
+  end
+
+  def show_help
+    puts <<-EOF
+===============================================================================
+#{File.basename $0} - Check IPMI Sensor Cache NRPE Plugin
+===============================================================================
+Usage: #{File.basename $0} --fail-on-asserted --sensor io.hdd0.fail
+
+Checks the sensor cache for sensor readings and does some basic logic on the
+values, returning them in the standard NRPE format.  Also allows specifying
+custom regular expressions for CRIT,WARN,OK matches.
+
+Options:
+   -h, --help               This screen
+   -S, --sensor             Sensor name (required)
+   -O, --ok-match           Regex to use to match OK condition
+   -W, --warn-match         Regex to use to match WARNING condition
+   -C, --critical-match     Regex to use to match CRITICAL condition
+
+Logic Options:
+       --fail-on-asserted   Will fail on / Asserted/
+                            This is good for sensors like HDD failure
+       --ok-on-asserted     Will be OK on / Asserted/ and fail on /deasserted/
+                            This is good for state based sensors like PWR connections
+       --result-must-be-ok  Operate in a boolean manner. Ether OK match passes
+                            it is a critical failure.  This defaults to
+                            --ok-match /\[OK\]/ but can be overridden.
+
+The cache file should generally be updated by /usrbin/ipmi-update-reading-cache.sh
+
+Current Sensor Cache File: #{args.probe_cache}
+EOF
   end
 
   def run
@@ -139,6 +181,12 @@ class IpmiProbe
            Cache mtime: #{cache_mtime}
         Results Stale?: #{o.is_stale}
       EOF
+    end
+
+    # If it MUST be ok, then it MUST match
+    if o.result_must_be_ok:
+      exit_ok o.sensor_reading, o.prefix     if o.ok_regex.match(o.sensor_reading)
+      exit_critical o.sensor_reading, o.prefix
     end
 
     # Logic is: match worst to best scenarios.
