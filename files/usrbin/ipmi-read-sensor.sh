@@ -1,5 +1,7 @@
 #!/bin/bash 
-CACHE=$HOME/.freeipmi/sensor-reading-cache
+CACHE_DIR=/var/log/ipmi
+HOST=$HOSTNAME
+CACHE=$CACHE_DIR/sensor-reading-cache.$HOSTNAME
 MATCHED=127
 NRPE_OK=0
 NRPE_WARN=1
