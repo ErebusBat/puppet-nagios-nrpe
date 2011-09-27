@@ -103,4 +103,12 @@ class nagios_nrpe (
 	package{ 'ipmitool': }
 	package{ 'freeipmi-common': }
 	package{ 'freeipmi-tools': }
+	
+	file {'/usrbin/ipmi-update-reading-cache.sh':
+		source	=> "puppet:///modules/${module_name}/usrbin/ipmi-update-reading-cache.sh",
+		mode		=> 755,
+		owner		=> 'root',
+		group		=> 'root',
+		require	=> File['/usrbin']		
+	}
 }
