@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 CACHE_DIR=/var/log/ipmi
 HOST=$HOSTNAME
 CACHE=$CACHE_DIR/sensor-reading-cache.$HOSTNAME
@@ -13,13 +13,52 @@ CACHE_ALLOWED_AGE=1
 OK_MATCH=
 WARN_MATCH="warn"
 CRITICAL_MATCH="\sAsserted"
-SENSOR="io.hdd1.fail"
+SENSOR=												# no default
+
+# Now that defaults are setup, let's parse some arguments!
+#
+#	Arguments
+#		-S <sensor>
+#		-P <PREFIX>
+#		-C <critical match>
+#		-W <warn match>
+#		-O <OK match>
+while getopts "S:P:W:C:O:" opt; do
+	case $opt in
+		S)
+			SENSOR=$OPTARG
+			;;
+		P)
+			NRPE_PREFIX=$OPTARG
+			;;
+		C)
+			CRITICAL_MATCH=$OPTARG
+			;;
+		W)
+			WARN_MATCH="$OPTARG"
+			;;
+		O)
+			OK_MATCH=$OPTARG
+			;;
+		\?)
+			echo "Invalid option: -$OPTARGARG" >&2
+			;;
+		:)
+			echo "Option -$OPTARGARG requires an argument" >&2
+			;;			
+	esac
+done
+# At min we need a sensor so check that
+if [ -z $SENSOR ]; then
+	echo "ARUGMENT ERROR: Specify sensor -S"
+	exit $NRPE_UNKNOWN
+fi
 
 # Returns 0 if match
 function grep_string() {
 	STR=$1
 	CHECK=$2
-	echo $STR | egrep --ignore-case $CHECK > /dev/null
+	echo $STR | egrep --ignore-case "$CHECK" > /dev/null
 }
 
 # Returns $MATCHED if match
