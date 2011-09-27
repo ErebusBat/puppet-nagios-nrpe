@@ -56,8 +56,9 @@ class IpmiProbe
     $NAGIOS_EXIT        = Nagios::UNKNOWN
     args.prefix         = 'IPMI '
     args.cache_age      = 60
-    args.fail_on_assert = false
     args.user_specified_checks = false
+    args.fail_on_assert    = true  # default
+    args.result_must_be_ok = nil
 
     # Parse arguments
     opts = GetoptLong.new(
