@@ -80,7 +80,12 @@ class IpmiProbe
         when '--cache'
           args.probe_cache = arg
         when '--sensor'
-          args.sensor = Regexp.escape arg
+          # Detect if they specified a numeric sensor or not.  Add the correct padding.
+          if arg.match /^(\d+):?$/:
+            args.sensor = "#{$1}: "
+          else
+            args.sensor = "\s#{Regexp.escape arg}\s"
+          end
         when '--ok-match'
           args.ok_regex = Regexp.new arg, Regexp::IGNORECASE
           args.user_specified_checks = true
@@ -112,7 +117,7 @@ class IpmiProbe
       end
 
       if args.result_must_be_ok:
-        args.ok_regex       = /\[OK\]/
+        args.ok_regex       = /\[OK\]\s*$/
       end
     end
 
