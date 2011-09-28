@@ -28,5 +28,14 @@ command[check_sunfire_fp_locate]=<%= ipmi_script %> -S fp.locate.btn --fail-on-a
 command[check_sunfire_ps_present]=<%= ipmi_script %> -S $ARG1$.prsnt --must-be-ok --ok-match "Device Present"
 command[check_sunfire_ps_vinok]=<%= ipmi_script %> -S $ARG1$.vinok --ok-on-asserted
 command[check_sunfire_ps_pwrok]=<%= ipmi_script %> -S $ARG1$.pwrok --ok-on-asserted
-
+command[check_sunfire_io_board]=<%= ipmi_script %> -S io.id1.prsnt --must-be-ok --ok-match "Device Present"
+command[check_sunfire_proc_temp]=<%= ipmi_script %> -S $ARG1$.t_core --must-be-ok
 command[check_sunfire_hdd_health]=<%= ipmi_script %> -S io.$ARG1$.fail --fail-on-asserted
+command[check_sunfire_fan_speed]=<%= ipmi_script %> -S $ARG1$.$ARG2$.$ARG3$.speed --must-be-ok
+
+# For CPU voltage info see: http://www.hardwaresecrets.com/article/Understanding-All-Voltage-Configurations-from-the-Motherboard/995/2
+command[check_sunfire_proc_vcore]=<%= ipmi_script %> -S $ARG1$.v_vdd --must-be-ok
+command[check_sunfire_proc_v_membus]=<%= ipmi_script %> -S $ARG1$.v_vddio --must-be-ok
+
+
+
