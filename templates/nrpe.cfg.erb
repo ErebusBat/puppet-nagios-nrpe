@@ -84,7 +84,6 @@ command[check_cluster]=<%= pluginsdir %>/check_cluster $ARG1$
 command[check_dir_age]=<%= pluginsdir %>/check_dir_age $ARG1$
 command[check_disk]=<%= pluginsdir %>/check_disk $ARG1$
 command[check_file_age]=<%= pluginsdir %>/check_file_age $ARG1$
-command[check_file_exist]=<%= pluginsdir %>/check_file_exists.rb -F $ARG1$ $ARG2$
 command[check_hpjd]=<%= pluginsdir %>/check_hpjd $ARG1$
 command[check_ide_smart]=<%= pluginsdir %>/check_ide_smart $ARG1$
 command[check_load]=<%= pluginsdir %>/check_load $ARG1$
@@ -103,5 +102,9 @@ command[check_time_skew]=<%= pluginsdir %>/check_time_skew $ARG1$
 command[check_users]=<%= pluginsdir %>/check_users $ARG1$
 
 # Contrib plugins (also check in <%= nrpe_conf_d %>)
-command[check_memory]=<%= pluginsdir %>/contrib/check_memory.rb $ARG1$
-command[check_ipmi_sensor]=<%= pluginsdir %>/contrib/check_ipmi.rb $ARG1$
+<%
+  contrib_dir = pluginsdir + "/contrib"
+%>
+command[check_file_exist]=<%= contrib_dir %>/check_file_exists.rb -F $ARG1$ $ARG2$
+command[check_memory]=<%= contrib_dir %>/check_memory.rb $ARG1$
+command[check_ipmi_sensor]=<%= contrib_dir %>/check_ipmi.rb $ARG1$
